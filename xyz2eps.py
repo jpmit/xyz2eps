@@ -77,13 +77,18 @@ class Eps(object):
 
     def createboxes(self):
         """White boxes, generally for top right of image so can write legend"""
-        # currently only a single white box is possible in top right
-        if not self.params['BOX']:
-            return []
-        box = Box(self.params['BBOXX'] - self.params['BOXWIDTH'],
-                  self.params['BBOXY'] - self.params['BOXHEIGHT'],
-                  self.params['BBOXX'], self.params['BBOXY'])
-        return [box]
+        boxes = []
+        # can create a box in top right and/or top left
+        if self.params['RBOX']:
+            box = Box(self.params['BBOXX'] - self.params['RBOXWIDTH'],
+                      self.params['BBOXY'] - self.params['RBOXHEIGHT'],
+                      self.params['BBOXX'], self.params['BBOXY'])
+            boxes.append(box)
+        if self.params['LBOX']:
+            box = Box(0, self.params['BBOXY'] - self.params['LBOXHEIGHT'],
+                      0 + self.params['LBOXWIDTH'], self.params['BBOXY'])
+            boxes.append(box)
+        return boxes
     
     def getepsstring(self):
         """Return a string that is text of the eps file"""
@@ -121,13 +126,14 @@ class Eps(object):
 
     def _getboxstr(self):
         """Return a string that is text for drawing the box"""
-        box = self.boxes[0]
-        boxstr = x2edata.BOXSTR.format(box.lleftx,
-                                       box.llefty,
-                                       box.urighty-box.llefty,
-                                       box.urightx-box.lleftx,
-                                       box.llefty-box.urighty,
-                                       box.lleftx-box.urightx)
+        boxstr = ''
+        for box in self.boxes:
+            boxstr += x2edata.BOXSTR.format(box.lleftx,
+                                            box.llefty,
+                                            box.urighty-box.llefty,
+                                            box.urightx-box.lleftx,
+                                            box.llefty-box.urighty,
+                                            box.lleftx-box.urightx)
         return boxstr
 
     def writeeps(self,outfile):
@@ -186,17 +192,27 @@ def gettextstr(params):
     if not params['TEXT']:
         return ''
     # mapping between characters and font
-    charmap = {'delta': 'Cmmi10',
+    fontmap = {'delta': 'Cmmi10',
                'minus': 'Cmsy10',
+               'equal': 'Cmr10',
+               'zero': 'Cmr10',
+               'one': 'Cmr10',
+               'two': 'Cmr10',
+               'three': 'Cmr10',
+               'four': 'Cmr10',
+               'five': 'Cmr10',
+               'six': 'Cmr10',
+               'seven': 'Cmr10',
+               'eight': 'Cmr10',
+               'nine': 'Cmr10',               
                }
-    default = 'Cmr10'
+    defaultfont = 'DejaVuSans'
     textstr = ''
     # go though each character in textdata
     # dictionary
     for text in params['TEXTDATA']:
         char = text[0]
-        # choose the font for the character
-        font = charmap.get(char, default)
+        font = fontmap.get(char, defaultfont)
         textstr = ('%s/%s findfont\n'
                    '10 scalefont\n'
                    'setfont\n'
@@ -226,9 +242,12 @@ def getparams(fname):
                'DIM2':FLOAT,
                'XSHIFT':INT,
                'YSHIFT':INT,
-               'BOX':BOOL,
-               'BOXWIDTH':INT,
-               'BOXHEIGHT':INT,
+               'RBOX':BOOL,
+               'RBOXWIDTH':INT,
+               'RBOXHEIGHT':INT,
+               'LBOX':BOOL,
+               'LBOXWIDTH':INT,
+               'LBOXHEIGHT':INT,
                'CRAD':FLOAT,
                'TEXT':BOOL,
                'TEXTDATA': ast.literal_eval # trick
