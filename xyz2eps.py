@@ -115,9 +115,16 @@ class Eps(object):
 
         return '%s%s%s%s%s%s' %(hstr,fontstr,cstr,boxstr,textstr,tstr)
 
+    def ordercircles(self):
+        """Order circles so that we draw any yellow circles last"""
+        for i in range(len(self.circles)):
+            if self.circles[i].color == YELLOW:
+                self.circles.append(self.circles.pop(i))
+
     def _getcstr(self):
         """Return a string that is text for drawing the circles"""
         cstr = ''
+        self.ordercircles()
         for circ in self.circles:
             col = ' '.join([str(i) for i in circ.color])
             cstr = '%s%.2f %.2f %.2f %s filledcircle\n' %(cstr,circ.posx,
