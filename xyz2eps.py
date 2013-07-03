@@ -1,11 +1,14 @@
 #! /usr/bin/env python
 # xyz2eps.py
-# 25th April 2013
+#
 # James Mithen
-# Note: we store all co-ords normalised i.e. between 0 and 1
+# j.mithen@surrey.ac.uk
+#
+# Create an eps image from an 'XYZ' file that stores positions of a
+# set of particles in 3d space.  See README and the examples/
+# directory for how this works.
 
 import x2edata
-import readwrite
 import numpy as np
 import ast
 import sys
@@ -25,10 +28,10 @@ AXMAP = {'X': 0, 'Y': 1, 'Z': 2}
 
 class Eps(object):
     def __init__(self,params):
-        """Create Eps object from info given in xyzconfig.py"""
+        """Create Eps object from info given in dictionary params"""
         self.params = params
-        self.positions, self.symbols = readwrite.rxyz(self.params['INFILE'],
-                                                      True)
+        self.positions, self.symbols = readxyz(self.params['INFILE'],
+                                               True)
         # bounding box
         self.bbox = Box(self.params['BBOXX0'],self.params['BBOXY0'],
                         self.params['BBOXX'],self.params['BBOXY'])
@@ -41,11 +44,10 @@ class Eps(object):
         """Return center (centerx,centery) as tuple"""
         # at the moment, the only option for centering the eps image
         # is as implemented below: The center point is the center of
-        # mass of the overlayer atoms (the yellow atoms) in the relevant
-        # plane.
-        # Note that the parameters XSHIFT and YSHIFT
-        # (see creatcircles) can be used to 'shift'
-        # the center of the eps.
+        # mass of the overlayer atoms (the yellow atoms) in the
+        # relevant plane.  Note that the parameters XSHIFT and YSHIFT
+        # (see creatcircles) can be used to 'shift' the center of the
+        # eps.
         spos = np.array([self.positions[i] for i in range(len(self.positions))
                          if self.symbols[i] == 'S'])
         xcenter = sum(spos[:,AXMAP[self.params['PLANE'][0]]])/len(spos)
@@ -58,8 +60,7 @@ class Eps(object):
         wpts,hpts = self.bbox.getwidthheight()
         cx,cy = self.getcenter()
         for (p,s) in zip(self.positions,self.symbols):
-            # coords of circle in pts
-            # in x direction and y direction
+            # coords of circle in pts in x direction and y direction
             px,py = (p[AXMAP[self.params['PLANE'][0]]],
                      p[AXMAP[self.params['PLANE'][1]]])
             px = (px - cx) + self.params['DIM1']/2.0
@@ -69,7 +70,7 @@ class Eps(object):
             # colour
             ccol = DCOLORS.get(s,DCOLORS['OTHER'])
             # create circle and add to list if it 'fits' into the eps
-            # print px,py
+            # bounding box
             circ = Circle(px,py,self.params['CRAD'],ccol)            
             if self.bbox.circlefits(circ):
                 circles.append(circ)
@@ -146,9 +147,8 @@ class Eps(object):
 class Box(object):
     """Box used as bounding box for the EPS, box for legend etc."""
     def __init__(self,lleftx,llefty,urightx,urighty):
-        # note the syntax in eps file for bounding box is
-        # BoundingBox: lowerleftx, lowerlefty, upperrightx,
-        # upperrighty
+        # note the syntax in eps file for bounding box is BoundingBox:
+        # lowerleftx, lowerlefty, upperrightx, upperrighty
         self.lleftx = lleftx
         self.llefty = llefty
         self.urightx = urightx
@@ -182,7 +182,10 @@ class Circle(object):
         self.color = color # normalised rgb tuple
 
 def getfontstr(params):
+    """get font string which contains glyphs for eps file."""
     if not params['TEXT']:
+        # we are not writing any text on the eps image, hence we
+        # dont want to write FONTSTR, which contains the glyphs
         return ''
     else:
         return FONTSTR
@@ -224,7 +227,7 @@ def gettextstr(params):
     return textstr
 
 def getparams(fname):
-    """Get dictionary of parameters for file fname"""
+    """Get dictionary of parameters from file fname"""
     fin = open(fname,'r')
     lines = fin.readlines()
     fin.close()
@@ -268,9 +271,39 @@ def getparams(fname):
             params[name] = nval
     return params
 
-if __name__ == '__main__':
+def readxyz(fname, retsymbols=False, splines=1):
+    """Read a .xyz coordinate file, return particle positions"""
+    fin = open(fname,'r')
+    lines = fin.readlines()
+    fin.close()
+    npar = int(lines[0])
+    positions = np.empty([npar,3])
+    symbols = [None]*npar
+    coordline = 1 + splines
+    i = 0
+    for line in lines[coordline:]:
+        li = line.split()
+        symbols[i] = li[0]
+        positions[i,0] = float(li[1])
+        positions[i,1] = float(li[2])
+        positions[i,2] = float(li[3])
+        i = i + 1
+    if retsymbols:
+        return positions,symbols
+    else:
+        return positions
+
+def main():
+    # name of the infile
     infile = sys.argv[1]
+    # name of eps file to write output to
     outfile = sys.argv[2]
+    # get parameters from input file
     params = getparams(infile)
+    # create the Eps object
     eps = Eps(params)
+    # write the Eps object to an eps file, which is the image we want
     eps.writeeps(outfile)
+
+if __name__ == '__main__':
+    main()

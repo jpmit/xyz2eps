@@ -1,8 +1,12 @@
 # x2edata.py
-# 25th April 2013
+#
 # James Mithen
+# j.mithen@surrey.ac.uk
+#
 # data for xyz2eps.py
-    
+
+# Header for the EPS file.  This contains the function 'filled circle'
+# which is used to draw partices (as circles) on the EPS file.
 EPSHEAD = """%!PS-Adobe-3.0 EPSF-3.0
 %%Title: none
 %%Creator: JP Mithen
@@ -31,8 +35,12 @@ stroke
 end
 }} bind def
 """
+
+# EPS footer
 EPSFOOT = "showpage\n"
 
+# BOXSTR will draw a white box on the EPS file once the string is
+# formatted with arguments (bottomleft_x, bo
 BOXSTR =  """newpath
 {0} {1} moveto
 0 {2} rlineto
@@ -46,17 +54,8 @@ fill
 0 setgray
 """
 
-# hopefully one day I will be able to write
-# delta = -1 in cornder
-TEXTSTROLD = """/Times-roman findfont
-32 scalefont
-setfont
-0 setgray
-newpath
-50 50 moveto
-(TEST) show
-"""
-
+# FONTSTR contains all of the glyphs required to draw characters
+# '\delta', '-', and the digits '0-9'.
 FONTSTR = """/mpldict 11 dict def
 mpldict begin
 /m { moveto } bind def
