@@ -1,0 +1,35 @@
+# xyz file containing particle positions
+INFILE=example2.xyz
+
+# bounding box params
+BBOXX0=0
+BBOXY0=0
+BBOXX=238 
+BBOXY=170
+
+# dimension of layer in X and Y coords
+# of xyz file
+DIM1=20.0
+DIM2=15.0
+PLANE=YZ
+XSHIFT=0
+YSHIFT=-20
+
+# box in top right
+RBOX=False
+RBOXWIDTH=35
+RBOXHEIGHT=11
+
+# box in top left
+LBOX=False
+LBOXWIDTH=8
+LBOXHEIGHT=11
+
+# properties of the circles (particles)
+CRAD=5
+
+# text for writing delta = -13 etc
+# symbol, xpos, ypos
+TEXT=False
+#TEXTDATA=(('delta',43,68),('equal',48,68),('minus',56,68),('one',62,68),('three',67,68),('a',0,68),('parenright',5,68))
+
