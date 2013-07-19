@@ -13,6 +13,8 @@ import numpy as np
 import ast
 import sys
 
+class Xyz2EpsError(Exception): pass
+
 # rgb tuples for some colors
 YELLOW = (1,1,0)
 RED = (1,0,0)
@@ -302,9 +304,16 @@ def readxyz(fname, retsymbols=False, splines=1):
 
 def main():
     # name of the infile
-    infile = sys.argv[1]
+    try:
+        infile = sys.argv[1]
+    except IndexError:
+        raise Xyz2EpsError, 'no input file name supplied'
     # name of eps file to write output to
-    outfile = sys.argv[2]
+    try:
+        outfile = sys.argv[2]
+    except IndexError:
+        raise Xyz2EpsError, 'no output file name supplied'
+    
     # get parameters from input file
     params = getparams(infile)
     # create the Eps object
