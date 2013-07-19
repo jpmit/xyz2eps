@@ -12,6 +12,7 @@ import x2edata
 import numpy as np
 import ast
 import sys
+import operator
 
 class Xyz2EpsError(Exception): pass
 
@@ -61,19 +62,28 @@ class Eps(object):
         circles = []
         wpts,hpts = self.bbox.getwidthheight()
         cx,cy = self.getcenter()
+        # figure out which position indices are x,y, and z x and y are
+        # horizontal and vertical figure dimensions, respectively, z
+        # is the dimension in/out of the page.
+        xdir = AXMAP[self.params['PLANE'][0]]
+        ydir = AXMAP[self.params['PLANE'][1]]
+        # xdir, ydir and zdir are some permutation of {0,1,2}, hence
+        # indices must sum to 3.
+        zdir = ydir - xdir
         for (p,s) in zip(self.positions,self.symbols):
             # coords of circle in pts in x direction and y direction
-            px,py = (p[AXMAP[self.params['PLANE'][0]]],
-                     p[AXMAP[self.params['PLANE'][1]]])
+            px,py,pz = (p[xdir],
+                        p[ydir],
+                        p[zdir])
+            # z direction 
             px = (px - cx) + self.params['DIM1']/2.0
             py = (py - cy) + self.params['DIM2']/2.0
             px = (px/self.params['DIM1']) * wpts + self.params['XSHIFT']
             py = (py/self.params['DIM2']) * hpts + self.params['YSHIFT']
-            # colour
-            ccol = DCOLORS.get(s,DCOLORS['OTHER'])
+
             # create circle and add to list if it 'fits' into the eps
             # bounding box
-            circ = Circle(px,py,self.params['CRAD'],ccol)            
+            circ = Circle(px,py,pz,self.params['CRAD'],s)            
             if self.bbox.circlefits(circ):
                 circles.append(circ)
         return circles
@@ -119,10 +129,35 @@ class Eps(object):
 
     def ordercircles(self):
         """Order circles so that we draw any yellow circles last"""
-        for i in range(len(self.circles)):
-            if self.circles[i].color == YELLOW:
-                self.circles.append(self.circles.pop(i))
+        # default sort is to take 'N' 'O' 'S'; since these are
+        # alphabetical this sort will achieve this
+        self.circles.sort(key = operator.attrgetter('symbol'))
 
+        # next, for all circles of a certain label, we want to draw
+        # them in order of the '3rd' coordinate - i.e. into the page,
+        # so that the 2d image we see is really a cross section.
+
+        # first, get indices where new labels start
+        ncircs = len(self.circles)
+        startindices = [i for i in range(ncircs)
+                        if (self.circles[i].symbol != self.circles[i-1].symbol)]
+        startindices.append(ncircs)
+
+        # perspective controls the direction we are looking from along
+        # the third axis.  This is a bit confusing since the default
+        # involves reverse sorting.
+        if 'PERSPECTIVE' in self.params:
+            if self.params['PERSPECTIVE'] == 'REVERSE':
+                rev = False
+            else:
+                rev = True
+                
+        # sort for each label in turn
+        for s,e in zip(startindices[:-1],startindices[1:]):
+            self.circles[s:e] = sorted(self.circles[s:e],
+                                       key = operator.attrgetter('posz'),
+                                       reverse=True)
+        
     def _getcstr(self):
         """Return a string that is text for drawing the circles"""
         cstr = ''
@@ -184,12 +219,20 @@ class Box(object):
         return False
 
 class Circle(object):
-    def __init__(self,posx,posy,rad,color):
+    def __init__(self,posx,posy,posz,rad,symbol):
         self.posx = posx # in pts
         self.posy = posy # in pts
+        self.posz = posz # not in pts - this is used for sorting circles
         self.rad = rad # in pts
+        self.symbol = symbol # e.g. 'N', 'O', 'S' etc
+        # from the (jmol) symbol, store color
+        color = DCOLORS.get(symbol,DCOLORS['OTHER'])        
         self.color = color # normalised rgb tuple
 
+    def __str__(self):
+        return '%s %s %s %.2f %s' %(self.posx, self.posy, self.posz,
+                                    self.rad, self.symbol)
+    
 def getfontstr(params):
     """get font string which contains glyphs for eps file."""
     if not params['TEXT']:
