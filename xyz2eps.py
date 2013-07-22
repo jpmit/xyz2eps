@@ -70,22 +70,40 @@ class Eps(object):
         # xdir, ydir and zdir are some permutation of {0,1,2}, hence
         # indices must sum to 3.
         zdir = ydir - xdir
+        # if POSITIVE = False, we put the larger x values on the left
+        # hand side of the image, otherwise we put the larger x values
+        # on the right hand side. I.e. reflect image across center
+        # line.
+        reflect = False
+        if 'REFLECT' in self.params:
+            if self.params['REFLECT'] == True:
+                reflect = True
+            
         for (p,s) in zip(self.positions,self.symbols):
             # coords of circle in pts in x direction and y direction
             px,py,pz = (p[xdir],
                         p[ydir],
                         p[zdir])
-            # z direction 
+
             px = (px - cx) + self.params['DIM1']/2.0
             py = (py - cy) + self.params['DIM2']/2.0
             px = (px/self.params['DIM1']) * wpts + self.params['XSHIFT']
             py = (py/self.params['DIM2']) * hpts + self.params['YSHIFT']
+            
 
             # create circle and add to list if it 'fits' into the eps
             # bounding box
             circ = Circle(px,py,pz,self.params['CRAD'],s)            
             if self.bbox.circlefits(circ):
+                # reflect circle through vertical axis if necessary
+                if reflect:
+                    offcenter = px - wpts/2.0
+                    if offcenter > 0:
+                        circ.posx = px - wpts/2.0
+                    else:
+                        circ.posx = px + wpts/2.0            
                 circles.append(circ)
+                
         return circles
 
     def createboxes(self):
@@ -265,14 +283,15 @@ def gettextstr(params):
     textstr = ''
     # go though each character in textdata
     # dictionary
+    fontsize = params.get('FONTSIZE',10)
     for text in params['TEXTDATA']:
         char = text[0]
         font = fontmap.get(char, defaultfont)
         textstr = ('%s/%s findfont\n'
-                   '10 scalefont\n'
+                   '%d scalefont\n'
                    'setfont\n'
                    '%d %d moveto\n'
-                   '/%s glyphshow\n\n' %(textstr,font,
+                   '/%s glyphshow\n\n' %(textstr,font,fontsize,
                                          text[1],text[2], char)
                    )
         
@@ -292,20 +311,22 @@ def getparams(fname):
     convert = {'BBOXX0': INT,
                'BBOXY0': INT,
                'BBOXX': INT,
-               'BBOXY':INT,
-               'DIM1':FLOAT,
-               'DIM2':FLOAT,
-               'XSHIFT':INT,
-               'YSHIFT':INT,
-               'RBOX':BOOL,
-               'RBOXWIDTH':INT,
-               'RBOXHEIGHT':INT,
-               'LBOX':BOOL,
-               'LBOXWIDTH':INT,
-               'LBOXHEIGHT':INT,
-               'CRAD':FLOAT,
-               'TEXT':BOOL,
-               'TEXTDATA': ast.literal_eval # trick
+               'BBOXY': INT,
+               'DIM1': FLOAT,
+               'DIM2': FLOAT,
+               'XSHIFT': INT,
+               'YSHIFT': INT,
+               'RBOX': BOOL,
+               'RBOXWIDTH': INT,
+               'RBOXHEIGHT': INT,
+               'LBOX': BOOL,
+               'LBOXWIDTH': INT,
+               'LBOXHEIGHT': INT,
+               'CRAD': FLOAT,
+               'TEXT': BOOL,
+               'TEXTDATA': ast.literal_eval, # trick
+               'REFLECT': BOOL,
+               'FONTSIZE' : INT
                }
     # go through each line of file,
     # adding parameters to dictionary
