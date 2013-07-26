@@ -147,6 +147,9 @@ class Eps(object):
 
     def ordercircles(self):
         """Order circles so that we draw any yellow circles last"""
+        if 'ORDER' in self.params and (self.params['ORDER'] == False):
+            # dont do any ordering
+            return
         # default sort is to take 'N' 'O' 'S'; since these are
         # alphabetical this sort will achieve this
         self.circles.sort(key = operator.attrgetter('symbol'))
@@ -326,7 +329,8 @@ def getparams(fname):
                'TEXT': BOOL,
                'TEXTDATA': ast.literal_eval, # trick
                'REFLECT': BOOL,
-               'FONTSIZE' : INT
+               'FONTSIZE' : INT,
+               'ORDER' : BOOL
                }
     # go through each line of file,
     # adding parameters to dictionary
