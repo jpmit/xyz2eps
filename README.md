@@ -19,9 +19,9 @@ The best thing to do is probably to look at the examples, which are
 included in the examples/ directory.
 
 To produce eps images for the examples, navigate to the examples
-directory and type
+directory and type  
     $ ../xyz2eps.py example1.in example1.eps
-    $ ../xyz2eps.py example2.in example2.eps
+    $ ../xyz2eps.py example2.in example2.eps  
 This will produce eps images named example1.eps and example2.eps
 
 License
